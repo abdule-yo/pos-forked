@@ -1,158 +1,197 @@
 "use client";
 
-import { Product } from "@prisma/client";
-import { ProductDialog } from "./product-dialog";
-import { DataTable, ColumnDef } from "@/components/data-table";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import type { Product } from "@prisma/client";
+import { ProductDialog } from "./product-dialog";
+import { ImportDialog } from "./import-dialog";
+import { DataTable, ColumnDef } from "@/components/data-table";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Plus, Pen, Trash2 } from "lucide-react";
+import { Plus, Pen, Trash2, Package } from "lucide-react";
 import { deleteProduct } from "@/actions/products";
-import { ImportDialog } from "./import-dialog";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
 } from "@/components/ui/dialog";
+import { CategoryChip, StockChip } from "@/components/ui/chip";
+import { categoryColor } from "@/lib/categories";
+import { formatMoney } from "@/lib/format";
 
 export function InventoryTable({ initialProducts }: { initialProducts: Product[] }) {
-    const [products, setProducts] = useState(initialProducts);
+    const router = useRouter();
     const [dialogOpen, setDialogOpen] = useState(false);
     const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-    const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
-    const [productToDelete, setProductToDelete] = useState<string | null>(null);
+    const [toDelete, setToDelete] = useState<Product | null>(null);
     const [isDeleting, setIsDeleting] = useState(false);
 
-    const openAddDialog = () => {
+    const openAdd = () => {
         setSelectedProduct(null);
         setDialogOpen(true);
     };
 
-    const openEditDialog = (product: Product) => {
+    const openEdit = (product: Product) => {
         setSelectedProduct(product);
         setDialogOpen(true);
     };
 
-    const confirmDelete = (productId: string) => {
-        setProductToDelete(productId);
-        setDeleteConfirmOpen(true);
-    };
+    // Refreshing the route re-renders with fresh server data and keeps scroll
+    // position — a full page reload threw both away.
+    const refresh = () => router.refresh();
 
     const handleDelete = async () => {
-        if (!productToDelete) return;
+        if (!toDelete) return;
         setIsDeleting(true);
         try {
-            await deleteProduct(productToDelete);
-            setProducts(products.filter(p => p.id !== productToDelete));
-            toast.success("Product deleted successfully");
-            setDeleteConfirmOpen(false);
-        } catch (error: any) {
-            toast.error(error.message || "Failed to delete product");
+            await deleteProduct(toDelete.id);
+            toast.success(`Removed ${toDelete.name}`);
+            setToDelete(null);
+            refresh();
+        } catch {
+            // A product that has already been sold cannot be removed without
+            // destroying that sale's history.
+            toast.error("This item can't be removed", {
+                description: "It appears in past sales. Set its stock to 0 instead.",
+            });
         } finally {
             setIsDeleting(false);
         }
     };
+
     const columns: ColumnDef<Product>[] = [
         {
-            header: "Name",
+            header: "Item",
             accessorKey: "name",
-            cell: (p) => <span className="font-medium text-foreground">{p.name}</span>,
+            cell: (p) => (
+                <div className="min-w-0">
+                    <p className="truncate font-medium">{p.name}</p>
+                    <div className="mt-1 md:hidden">
+                        <CategoryChip category={p.category} />
+                    </div>
+                </div>
+            ),
         },
         {
             header: "Category",
             accessorKey: "category",
-            cell: (p) => p.category ? (
-                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-secondary/50 text-secondary-foreground border border-secondary/20">
-                    {p.category}
-                </span>
-            ) : "-",
+            priority: "secondary",
+            cell: (p) => <CategoryChip category={p.category} />,
+            exportValue: (p) => p.category ?? "Uncategorised",
         },
         {
             header: "Price",
             accessorKey: "price",
             align: "right",
-            cell: (p) => <span className="font-medium">${p.price.toFixed(2)}</span>,
-            exportValue: (p) => p.price.toString(),
+            cell: (p) => (
+                <span className="font-heading font-semibold tabular">{formatMoney(p.price)}</span>
+            ),
+            exportValue: (p) => p.price.toFixed(2),
         },
         {
-            header: "Stock",
+            header: "In stock",
             accessorKey: "stock",
             align: "right",
-            cell: (p) => <span className="text-muted-foreground">{p.stock}</span>,
+            cell: (p) => <StockChip stock={p.stock} />,
+            exportValue: (p) => String(p.stock),
         },
         {
-            header: "Actions",
+            header: "",
             align: "right",
             cell: (p) => (
                 <div className="flex items-center justify-end gap-1">
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={() => openEditDialog(p)}>
-                        <Pen className="h-4 w-4" />
-                    </Button>
-                    <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-8 w-8 text-muted-foreground hover:text-destructive" 
-                        onClick={() => confirmDelete(p.id)}
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="text-muted-foreground hover:text-foreground"
+                        onClick={() => openEdit(p)}
+                        aria-label={`Edit ${p.name}`}
                     >
-                        <Trash2 className="h-4 w-4" />
+                        <Pen className="size-4" />
+                    </Button>
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="text-muted-foreground hover:text-destructive"
+                        onClick={() => setToDelete(p)}
+                        aria-label={`Remove ${p.name}`}
+                    >
+                        <Trash2 className="size-4" />
                     </Button>
                 </div>
             ),
         },
     ];
 
-    // Extract unique categories for the filter
-    const categories = Array.from(new Set(products.map(p => p.category).filter(Boolean))) as string[];
+    const categories = Array.from(
+        new Set(initialProducts.map((p) => p.category).filter(Boolean))
+    ) as string[];
 
     return (
-        <div className="bg-card shadow-sm border border-border/50 rounded-xl overflow-hidden flex flex-col">
-            <ProductDialog 
-                open={dialogOpen} 
-                onOpenChange={setDialogOpen} 
-                product={selectedProduct} 
-                onSuccess={() => window.location.reload()}
+        <>
+            <ProductDialog
+                open={dialogOpen}
+                onOpenChange={setDialogOpen}
+                product={selectedProduct}
+                onSuccess={refresh}
             />
-            <Dialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
-                <DialogContent className="sm:max-w-[400px]">
+
+            <Dialog open={!!toDelete} onOpenChange={(open) => !open && setToDelete(null)}>
+                <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>Confirm Deletion</DialogTitle>
+                        <DialogTitle>Remove {toDelete?.name}?</DialogTitle>
                         <DialogDescription>
-                            Are you sure you want to delete this product? This action cannot be undone.
+                            It disappears from the Sell screen and this list. Past sales keep their
+                            record.
                         </DialogDescription>
                     </DialogHeader>
-                    <DialogFooter className="flex justify-end gap-2 mt-4">
-                        <Button variant="outline" onClick={() => setDeleteConfirmOpen(false)} disabled={isDeleting}>
-                            Cancel
+                    <DialogFooter>
+                        <Button
+                            variant="outline"
+                            onClick={() => setToDelete(null)}
+                            disabled={isDeleting}
+                        >
+                            Keep it
                         </Button>
                         <Button variant="destructive" onClick={handleDelete} disabled={isDeleting}>
-                            {isDeleting ? "Deleting..." : "Delete Product"}
+                            {isDeleting ? "Removing…" : "Remove"}
                         </Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
-            <DataTable 
-                data={products} 
+
+            <DataTable
+                data={initialProducts}
                 columns={columns}
+                rowAccent={(p) => categoryColor(p.category)}
                 searchKey="name"
-                searchPlaceholder="Filter products by name..."
+                searchPlaceholder="Search products…"
                 filterKey="category"
                 filterOptions={categories}
-                showExport={true}
-                exportFilenamePrefix="Inventory"
-                emptyMessage="No products found."
+                showExport
+                exportFilenamePrefix="Products"
+                emptyIcon={Package}
+                emptyMessage="No products yet"
+                emptyDescription="Add what the shop sells so it can be rung up at the counter."
+                emptyAction={
+                    <Button onClick={openAdd}>
+                        <Plus />
+                        Add your first product
+                    </Button>
+                }
                 toolbarActions={
                     <>
                         <ImportDialog />
-                        <Button onClick={openAddDialog} className="h-9 px-3 text-[13px] gap-2">
-                            <Plus className="h-4 w-4" />
-                            Add Product
+                        <Button onClick={openAdd}>
+                            <Plus />
+                            Add product
                         </Button>
                     </>
                 }
             />
-        </div>
+        </>
     );
 }

@@ -14,6 +14,12 @@ import {
     DialogTrigger,
 } from "@/components/ui/dialog";
 import { createExpense } from "@/actions/expenses";
+import { toast } from "sonner";
+import { Plus } from "lucide-react";
+import { formatMoney } from "@/lib/format";
+import { CategoryPicker } from "@/components/category-picker";
+
+const SUGGESTED = ["Rent", "Utilities", "Transport", "Supplies", "Food", "Maintenance"];
 
 export function ExpenseDialog({ onSuccess }: { onSuccess?: () => void }) {
     const [open, setOpen] = useState(false);
@@ -24,20 +30,32 @@ export function ExpenseDialog({ onSuccess }: { onSuccess?: () => void }) {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        const amountValue = parseFloat(amount);
+        if (!Number.isFinite(amountValue) || amountValue <= 0) {
+            toast.error("Enter an amount greater than zero.");
+            return;
+        }
+
         setLoading(true);
         try {
             await createExpense({
-                description,
-                category: category || undefined,
-                amount: parseFloat(amount),
+                description: description.trim(),
+                category: category.trim() || undefined,
+                amount: amountValue,
+            });
+            toast.success(`Recorded ${formatMoney(amountValue)}`, {
+                description: description.trim(),
             });
             setOpen(false);
             setDescription("");
             setCategory("");
             setAmount("");
-            if (onSuccess) onSuccess();
+            onSuccess?.();
         } catch (error) {
-            console.error("Failed to save expense", error);
+            toast.error(
+                error instanceof Error ? error.message : "Could not save. Try again."
+            );
         } finally {
             setLoading(false);
         }
@@ -45,53 +63,70 @@ export function ExpenseDialog({ onSuccess }: { onSuccess?: () => void }) {
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger render={<Button>Log Expense</Button>} />
-            <DialogContent className="sm:max-w-[425px]">
-                <form onSubmit={handleSubmit}>
+            <DialogTrigger
+                render={
+                    <Button>
+                        <Plus />
+                        Add expense
+                    </Button>
+                }
+            />
+            <DialogContent className="sm:max-w-md">
+                <form onSubmit={handleSubmit} className="space-y-5">
                     <DialogHeader>
-                        <DialogTitle>Log Expense</DialogTitle>
+                        <DialogTitle>Add an expense</DialogTitle>
                         <DialogDescription>
-                            Record a new operational expense.
+                            Money the shop spent — rent, electricity, transport.
                         </DialogDescription>
                     </DialogHeader>
-                    <div className="grid gap-4 py-4">
-                        <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="description" className="text-right">Description</Label>
+
+                    <div className="space-y-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="description">What was it for?</Label>
                             <Input
                                 id="description"
                                 value={description}
                                 onChange={(e) => setDescription(e.target.value)}
-                                className="col-span-3"
+                                placeholder="Shop rent for August"
+                                className="h-11"
                                 required
+                                autoFocus
                             />
                         </div>
-                        <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="category" className="text-right">Category</Label>
-                            <Input
-                                id="category"
-                                value={category}
-                                onChange={(e) => setCategory(e.target.value)}
-                                className="col-span-3"
-                                placeholder="e.g. Utilities, Food"
-                            />
-                        </div>
-                        <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="amount" className="text-right">Amount ($)</Label>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="amount">How much?</Label>
                             <Input
                                 id="amount"
                                 type="number"
+                                inputMode="decimal"
                                 step="0.01"
                                 min="0.01"
                                 value={amount}
                                 onChange={(e) => setAmount(e.target.value)}
-                                className="col-span-3"
+                                placeholder="0.00"
+                                className="h-11 text-lg"
                                 required
                             />
                         </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="expense-category">Category</Label>
+                            <CategoryPicker
+                                id="expense-category"
+                                value={category}
+                                onChange={setCategory}
+                                suggestions={SUGGESTED}
+                            />
+                        </div>
                     </div>
+
                     <DialogFooter>
+                        <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+                            Cancel
+                        </Button>
                         <Button type="submit" disabled={loading}>
-                            {loading ? "Saving..." : "Save Expense"}
+                            {loading ? "Saving…" : "Add expense"}
                         </Button>
                     </DialogFooter>
                 </form>

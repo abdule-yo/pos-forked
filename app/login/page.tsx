@@ -1,12 +1,14 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useRouter } from "next/navigation";
-import { Package2 } from "lucide-react";
+import { Gem, TriangleAlert } from "lucide-react";
+import { CATEGORY_TOKENS } from "@/lib/categories";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export default function LoginPage() {
     const [email, setEmail] = useState("");
@@ -20,96 +22,101 @@ export default function LoginPage() {
         setError("");
         setLoading(true);
 
-        const { data, error } = await authClient.signIn.email({
-            email,
-            password,
-        });
+        const { error } = await authClient.signIn.email({ email, password });
 
         if (error) {
-            setError(error.message || "Invalid email or password");
+            setError("That email and password don't match. Try again.");
             setLoading(false);
-        } else {
-            router.push("/");
-            router.refresh();
+            return;
         }
+
+        router.push("/");
+        router.refresh();
     };
 
     return (
-        <div className="flex h-screen w-full items-center justify-center bg-background relative overflow-hidden p-4">
-            {/* Ambient Background Glows */}
-            <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-primary/20 blur-[120px] rounded-full pointer-events-none" />
-            <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] bg-primary/10 blur-[120px] rounded-full pointer-events-none" />
+        <div className="flex min-h-screen w-full flex-col bg-background p-4">
+            <div className="flex justify-end">
+                <ThemeToggle />
+            </div>
 
-            <div className="w-full max-w-[380px] relative z-10">
-                <div className="flex flex-col items-center mb-8">
-                    <div className="h-16 w-16 bg-primary/10 rounded-2xl flex items-center justify-center border border-primary/20 mb-4 shadow-[0_0_15px_rgba(var(--primary),0.1)]">
-                        <Package2 className="h-8 w-8 text-primary" />
+            <div className="flex flex-1 items-center justify-center">
+                <div className="w-full max-w-sm">
+                    <div className="mb-8 flex flex-col items-center text-center">
+                        <span className="mb-4 flex size-14 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-raised">
+                            <Gem className="size-7" strokeWidth={1.6} />
+                        </span>
+                        <h1 className="font-heading text-2xl font-semibold tracking-tight">
+                            Boutique
+                        </h1>
+                        <p className="mt-1.5 text-sm text-muted-foreground">
+                            Sign in to open the counter.
+                        </p>
                     </div>
-                    <h1 className="text-2xl font-semibold tracking-tight text-foreground">Welcome Back</h1>
-                    <p className="text-muted-foreground mt-2 text-sm text-center">
-                        Enter your credentials to access the POS system
+
+                    <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-raised">
+                        {/* The full category spectrum, stated once. It is the
+                            system's signature, and it is the first thing anyone
+                            opening the app sees. */}
+                        <div aria-hidden className="flex h-1">
+                            {CATEGORY_TOKENS.map((token) => (
+                                <span
+                                    key={token}
+                                    className="flex-1"
+                                    style={{ background: `var(--cat-${token})` }}
+                                />
+                            ))}
+                        </div>
+
+                        <form onSubmit={handleLogin} className="space-y-5 p-6">
+                            <div className="space-y-2">
+                                <Label htmlFor="email">Email</Label>
+                                <Input
+                                    id="email"
+                                    type="email"
+                                    autoComplete="email"
+                                    placeholder="you@shop.com"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    className="h-11"
+                                    required
+                                    autoFocus
+                                />
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label htmlFor="password">Password</Label>
+                                <Input
+                                    id="password"
+                                    type="password"
+                                    autoComplete="current-password"
+                                    placeholder="••••••••"
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    className="h-11"
+                                    required
+                                />
+                            </div>
+
+                            {error && (
+                                <p
+                                    role="alert"
+                                    className="flex items-start gap-2 rounded-xl bg-destructive/10 p-3 text-sm text-destructive"
+                                >
+                                    <TriangleAlert className="mt-0.5 size-4 shrink-0" />
+                                    {error}
+                                </p>
+                            )}
+
+                            <Button type="submit" size="lg" className="w-full" disabled={loading}>
+                                {loading ? "Signing in…" : "Sign in"}
+                            </Button>
+                        </form>
+                    </div>
+
+                    <p className="mt-6 text-center text-xs text-muted-foreground">
+                        Forgotten your password? Ask the shop owner to reset it.
                     </p>
-                </div>
-
-                <div className="bg-card/50 backdrop-blur-xl border border-border/50 rounded-3xl p-6 sm:p-8 shadow-2xl">
-                    <form onSubmit={handleLogin} className="space-y-6">
-                        <div className="space-y-2">
-                            <Label htmlFor="email" className="text-foreground/80">Email Address</Label>
-                            <Input
-                                id="email"
-                                type="email"
-                                placeholder="name@company.com"
-                                required
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                className="bg-background/50 border-border/50 h-12 px-4 rounded-xl focus-visible:ring-primary/50"
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <div className="flex items-center justify-between">
-                                <Label htmlFor="password" className="text-foreground/80">Password</Label>
-                            </div>
-                            <Input
-                                id="password"
-                                type="password"
-                                required
-                                placeholder="••••••••"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                className="bg-background/50 border-border/50 h-12 px-4 rounded-xl focus-visible:ring-primary/50"
-                            />
-                        </div>
-
-                        {error && (
-                            <div className="bg-destructive/10 text-destructive border border-destructive/20 text-sm px-4 py-3 rounded-xl">
-                                {error}
-                            </div>
-                        )}
-
-                        <Button 
-                            className="w-full h-12 rounded-xl text-base font-medium shadow-[0_0_20px_rgba(var(--primary),0.3)] transition-all hover:shadow-[0_0_25px_rgba(var(--primary),0.5)]" 
-                            type="submit" 
-                            disabled={loading}
-                        >
-                            {loading ? "Signing in..." : "Sign in to Dashboard"}
-                        </Button>
-
-                        <Button 
-                            className="w-full h-12 rounded-xl text-base font-medium" 
-                            type="button" 
-                            variant="outline"
-                            onClick={() => {
-                                setEmail("admin@pos.com");
-                                setPassword("password123");
-                            }}
-                        >
-                            Auto-Fill Demo Credentials
-                        </Button>
-                    </form>
-                </div>
-                
-                <div className="mt-8 text-center text-xs text-muted-foreground">
-                    &copy; {new Date().getFullYear()} POS. All rights reserved.
                 </div>
             </div>
         </div>

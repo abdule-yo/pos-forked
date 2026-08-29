@@ -1,16 +1,18 @@
 import { getProducts } from "@/actions/products";
-import { ProductDialog } from "./product-dialog";
-import { ImportDialog } from "./import-dialog";
+import { requireUser } from "@/lib/session";
 import { InventoryTable } from "./inventory-table";
+import { PageHeader } from "@/components/page-header";
 
 export default async function InventoryPage() {
+    await requireUser();
     const products = await getProducts();
 
     return (
-        <div className="space-y-6 animate-in fade-in duration-500">
-            <div className="mb-6 pb-5 border-b border-border/50 flex justify-between items-center">
-                <h1 className="text-xl font-bold tracking-tight text-foreground">Inventory</h1>
-            </div>
+        <div className="stack-in">
+            <PageHeader
+                title="Products"
+                description="Everything the shop sells, and how many are left."
+            />
             <InventoryTable initialProducts={products} />
         </div>
     );

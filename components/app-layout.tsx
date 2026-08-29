@@ -1,75 +1,81 @@
 "use client";
 
-import React, { useState } from "react";
+import { useState } from "react";
 import { Sidebar } from "@/components/sidebar";
-import { Menu, Package2, PanelLeft } from "lucide-react";
+import { Menu, Gem, PanelLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { cn } from "@/lib/utils";
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [isCollapsed, setIsCollapsed] = useState(false);
+    const [sidebarOpen, setSidebarOpen] = useState(false);
+    const [isCollapsed, setIsCollapsed] = useState(false);
 
     return (
-    <div className="min-h-screen flex w-full bg-slate-50 dark:bg-background">
-      {/* Mobile Backdrop */}
-      {sidebarOpen && (
-        <div 
-          className="fixed inset-0 z-40 bg-black/80 md:hidden backdrop-blur-sm"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
+        <div className="flex min-h-screen w-full bg-background">
+            {sidebarOpen && (
+                <button
+                    aria-label="Close menu"
+                    className="fixed inset-0 z-40 bg-foreground/30 backdrop-blur-sm duration-200 animate-in fade-in md:hidden"
+                    onClick={() => setSidebarOpen(false)}
+                />
+            )}
 
-      {/* Sidebar */}
-      <div className={`fixed inset-y-0 left-0 z-50 transform transition-all duration-300 ease-in-out md:translate-x-0 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"} ${isCollapsed ? "w-[80px]" : "w-64"} md:p-4`}>
-        <Sidebar onClose={() => setSidebarOpen(false)} isCollapsed={isCollapsed} onToggleCollapse={() => setIsCollapsed(!isCollapsed)} />
-      </div>
-
-      {/* Main Content */}
-      <div className={`flex-1 flex flex-col min-h-screen w-full transition-all duration-300 ease-in-out ${isCollapsed ? "md:pl-[80px]" : "md:pl-64"}`}>
-        {/* Header */}
-        <header className="sticky top-0 z-30 flex h-16 md:h-20 items-center gap-4 bg-background/80 backdrop-blur-md border-b border-border/40 px-4 md:px-8">
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="md:hidden"
-            onClick={() => setSidebarOpen(true)}
-          >
-            <Menu className="h-6 w-6" />
-            <span className="sr-only">Toggle Sidebar</span>
-          </Button>
-          
-          <div className="w-full flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2 md:hidden">
-                <Package2 className="h-5 w-5 text-primary" />
-                <span className="font-bold tracking-tight">POS</span>
-              </div>
-              
-              <Button
-                variant="outline"
-                size="icon"
-                className="hidden md:flex h-9 w-9 bg-background shadow-sm border-border/50 rounded-lg text-muted-foreground hover:text-foreground"
-                onClick={() => setIsCollapsed(!isCollapsed)}
-                title={isCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
-              >
-                <PanelLeft className="h-4 w-4" />
-                <span className="sr-only">Toggle Sidebar</span>
-              </Button>
+            <div
+                className={cn(
+                    "fixed inset-y-0 left-0 z-50 transition-[transform,width] duration-300 ease-[var(--ease-swift)] md:translate-x-0 md:p-3",
+                    sidebarOpen ? "translate-x-0" : "-translate-x-full",
+                    isCollapsed ? "w-[76px]" : "w-64"
+                )}
+            >
+                <Sidebar onClose={() => setSidebarOpen(false)} isCollapsed={isCollapsed} />
             </div>
-            
-            <div className="flex items-center gap-4">
-              <ThemeToggle />
-            </div>
-          </div>
-        </header>
 
-        <main className="flex-1 overflow-x-hidden">
-          <div className="h-full px-4 pt-6 pb-8 md:px-8 md:pt-8 max-w-[1600px] mx-auto">
-            {children}
-          </div>
-        </main>
-      </div>
-    </div>
-  );
+            <div
+                className={cn(
+                    "flex min-h-screen w-full flex-1 flex-col transition-[padding] duration-300 ease-[var(--ease-swift)]",
+                    isCollapsed ? "md:pl-[76px]" : "md:pl-64"
+                )}
+            >
+                <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-border/60 bg-background/85 px-4 backdrop-blur-md md:px-8">
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="md:hidden"
+                        onClick={() => setSidebarOpen(true)}
+                        aria-label="Open menu"
+                    >
+                        <Menu className="size-5" />
+                    </Button>
+
+                    <div className="flex items-center gap-2 md:hidden">
+                        <Gem className="size-4.5 text-primary" strokeWidth={1.8} />
+                        <span className="font-heading text-sm font-semibold tracking-tight">
+                            Boutique
+                        </span>
+                    </div>
+
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="hidden text-muted-foreground md:flex"
+                        onClick={() => setIsCollapsed(!isCollapsed)}
+                        aria-label={isCollapsed ? "Expand menu" : "Collapse menu"}
+                    >
+                        <PanelLeft className="size-4.5" />
+                    </Button>
+
+                    <div className="ml-auto flex items-center gap-2">
+                        <ThemeToggle />
+                    </div>
+                </header>
+
+                <main className="flex-1 overflow-x-hidden">
+                    <div className="mx-auto h-full max-w-[1600px] px-4 py-6 md:px-8 md:py-8">
+                        {children}
+                    </div>
+                </main>
+            </div>
+        </div>
+    );
 }

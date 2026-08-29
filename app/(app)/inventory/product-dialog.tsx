@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,59 +14,87 @@ import {
 } from "@/components/ui/dialog";
 import { createProduct, updateProduct } from "@/actions/products";
 import type { Product } from "@prisma/client";
+import { toast } from "sonner";
+import { CategoryPicker } from "@/components/category-picker";
 
-export function ProductDialog({ 
-    open, 
-    onOpenChange, 
+/** The categories this shop deals in, offered as one tap rather than free text. */
+const SUGGESTED = [
+    "Bags",
+    "Jewellery",
+    "Watches",
+    "Perfumes",
+    "Cosmetics",
+    "Hair",
+    "Shoes",
+    "Accessories",
+];
+
+export function ProductDialog({
+    open,
+    onOpenChange,
     product,
-    onSuccess
-}: { 
-    open: boolean; 
-    onOpenChange: (open: boolean) => void; 
-    product?: Product | null; 
+    onSuccess,
+}: {
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+    product?: Product | null;
     onSuccess?: () => void;
 }) {
     const [loading, setLoading] = useState(false);
-    const [name, setName] = useState(product?.name || "");
-    const [category, setCategory] = useState(product?.category || "");
-    const [price, setPrice] = useState(product?.price?.toString() || "");
-    const [stock, setStock] = useState(product?.stock?.toString() || "");
+    const [name, setName] = useState("");
+    const [category, setCategory] = useState("");
+    const [price, setPrice] = useState("");
+    const [stock, setStock] = useState("");
     const isEdit = !!product;
 
     useEffect(() => {
-        if (open) {
-            setName(product?.name || "");
-            setCategory(product?.category || "");
-            setPrice(product?.price?.toString() || "");
-            setStock(product?.stock?.toString() || "");
-        }
+        if (!open) return;
+        setName(product?.name ?? "");
+        setCategory(product?.category ?? "");
+        setPrice(product?.price != null ? String(product.price) : "");
+        setStock(product?.stock != null ? String(product.stock) : "");
     }, [open, product]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        const priceValue = parseFloat(price);
+        const stockValue = parseInt(stock, 10);
+
+        if (!Number.isFinite(priceValue) || priceValue < 0) {
+            toast.error("Enter a price of zero or more.");
+            return;
+        }
+        if (!Number.isInteger(stockValue) || stockValue < 0) {
+            toast.error("Enter how many you have — a whole number, zero or more.");
+            return;
+        }
+
         setLoading(true);
         try {
             const data = {
-                name,
-                category: category || undefined,
-                price: parseFloat(price),
-                stock: parseInt(stock, 10),
+                name: name.trim(),
+                category: category.trim() || undefined,
+                price: priceValue,
+                stock: stockValue,
             };
+
             if (isEdit) {
                 await updateProduct(product.id, data);
+                toast.success(`Updated ${data.name}`);
             } else {
                 await createProduct(data);
+                toast.success(`Added ${data.name}`);
             }
+
             onOpenChange(false);
-            if (!isEdit) {
-                setName("");
-                setCategory("");
-                setPrice("");
-                setStock("");
-            }
-            if (onSuccess) onSuccess();
+            onSuccess?.();
         } catch (error) {
-            console.error("Failed to save product", error);
+            // Previously this only reached console.error, so a failed save looked
+            // identical to a successful one.
+            toast.error(
+                error instanceof Error ? error.message : "Could not save. Try again."
+            );
         } finally {
             setLoading(false);
         }
@@ -74,66 +102,81 @@ export function ProductDialog({
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[425px]">
-                <form onSubmit={handleSubmit}>
+            <DialogContent className="sm:max-w-lg">
+                <form onSubmit={handleSubmit} className="space-y-5">
                     <DialogHeader>
-                        <DialogTitle>{isEdit ? "Edit Product" : "Add Product"}</DialogTitle>
+                        <DialogTitle>{isEdit ? `Edit ${product.name}` : "Add a product"}</DialogTitle>
                         <DialogDescription>
-                            {isEdit ? "Make changes to your product here." : "Add a new product to your inventory."}
+                            {isEdit
+                                ? "Change the price or how many are in stock."
+                                : "Give it a name, a price, and how many you have."}
                         </DialogDescription>
                     </DialogHeader>
-                    <div className="grid gap-4 py-4">
-                        <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="name" className="text-right">Name</Label>
+
+                    <div className="space-y-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="name">Name</Label>
                             <Input
                                 id="name"
                                 value={name}
                                 onChange={(e) => setName(e.target.value)}
-                                className="col-span-3"
+                                placeholder="Leather shoulder bag"
+                                className="h-11"
                                 required
+                                autoFocus
                             />
                         </div>
-                        <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="category" className="text-right">Category</Label>
-                            <Input
+
+                        <div className="space-y-2">
+                            <Label htmlFor="category">Category</Label>
+                            <CategoryPicker
                                 id="category"
                                 value={category}
-                                onChange={(e) => setCategory(e.target.value)}
-                                className="col-span-3"
+                                onChange={setCategory}
+                                suggestions={SUGGESTED}
                             />
                         </div>
-                        <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="price" className="text-right">Price ($)</Label>
-                            <Input
-                                id="price"
-                                type="number"
-                                step="0.01"
-                                min="0"
-                                value={price}
-                                onChange={(e) => setPrice(e.target.value)}
-                                className="col-span-3"
-                                required
-                            />
-                        </div>
-                        <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="stock" className="text-right">Stock</Label>
-                            <Input
-                                id="stock"
-                                type="number"
-                                min="0"
-                                value={stock}
-                                onChange={(e) => setStock(e.target.value)}
-                                className="col-span-3"
-                                required
-                            />
+
+                        <div className="grid gap-4 sm:grid-cols-2">
+                            <div className="space-y-2">
+                                <Label htmlFor="price">Price</Label>
+                                <Input
+                                    id="price"
+                                    type="number"
+                                    inputMode="decimal"
+                                    step="0.01"
+                                    min="0"
+                                    value={price}
+                                    onChange={(e) => setPrice(e.target.value)}
+                                    placeholder="0.00"
+                                    className="h-11"
+                                    required
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="stock">How many in stock</Label>
+                                <Input
+                                    id="stock"
+                                    type="number"
+                                    inputMode="numeric"
+                                    min="0"
+                                    step="1"
+                                    value={stock}
+                                    onChange={(e) => setStock(e.target.value)}
+                                    placeholder="0"
+                                    className="h-11"
+                                    required
+                                />
+                            </div>
                         </div>
                     </div>
-                    <DialogFooter className="sm:justify-end">
+
+                    <DialogFooter>
                         <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                             Cancel
                         </Button>
                         <Button type="submit" disabled={loading}>
-                            {loading ? "Saving..." : "Save changes"}
+                            {loading ? "Saving…" : isEdit ? "Save changes" : "Add product"}
                         </Button>
                     </DialogFooter>
                 </form>

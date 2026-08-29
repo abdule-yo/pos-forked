@@ -1,17 +1,19 @@
 import { getAllSales } from "@/actions/sales";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { requireUser } from "@/lib/session";
 import { RecentSalesTable } from "../recent-sales-table";
+import { PageHeader } from "@/components/page-header";
 
 export default async function SalesPage() {
-  const sales = await getAllSales();
+    await requireUser();
+    const sales = await getAllSales();
 
-  return (
-    <div className="space-y-8 animate-in fade-in duration-500">
-      <div className="mb-6 pb-5 border-b border-border/50">
-        <h1 className="text-xl font-bold tracking-tight text-foreground">Sales History</h1>
-      </div>
-
-      <RecentSalesTable initialSales={sales} />
-    </div>
-  );
+    return (
+        <div className="stack-in">
+            <PageHeader
+                title="Sales"
+                description="Every sale recorded, newest first."
+            />
+            <RecentSalesTable initialSales={sales} />
+        </div>
+    );
 }

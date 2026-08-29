@@ -4,135 +4,370 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* ============================================================================
+   Boutique POS — design tokens
+
+   The interface itself is almost colourless: warm-neutral paper in light,
+   deep plum-charcoal in dark. Colour enters only from the merchandise. Each
+   product category owns a hue, and that hue follows it across every screen —
+   card spine, table chip, cart line, chart slice. Staff learn the colours in
+   a day and stop reading labels entirely.
+
+   Type is Space Grotesk throughout, set larger and looser than typical admin
+   software. The people using this are working a counter, not studying a
+   spreadsheet.
+   ========================================================================= */
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-outfit);
-  --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-outfit);
-  --color-sidebar-ring: var(--sidebar-ring);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar: var(--sidebar);
-
-  --color-ring: var(--ring);
-  --color-input: var(--input);
-  --color-border: var(--border);
-  --color-destructive: var(--destructive);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-accent: var(--accent);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-muted: var(--muted);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-secondary: var(--secondary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-primary: var(--primary);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-popover: var(--popover);
-  --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
 
-  --radius-sm: calc(var(--radius) * 0.6);
-  --radius-md: calc(var(--radius) * 0.8);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  /* Category hues, exposed to Tailwind so charts and utilities can reach them */
+  --color-cat-coral: var(--cat-coral);
+  --color-cat-gold: var(--cat-gold);
+  --color-cat-steel: var(--cat-steel);
+  --color-cat-magenta: var(--cat-magenta);
+  --color-cat-rose: var(--cat-rose);
+  --color-cat-indigo: var(--cat-indigo);
+  --color-cat-teal: var(--cat-teal);
+  --color-cat-leaf: var(--cat-leaf);
+  --color-cat-slate: var(--cat-slate);
+  --color-mark-coral: var(--mark-coral);
+  --color-mark-gold: var(--mark-gold);
+  --color-mark-leaf: var(--mark-leaf);
+  --color-mark-teal: var(--mark-teal);
+  --color-mark-steel: var(--mark-steel);
+  --color-mark-indigo: var(--mark-indigo);
+  --color-mark-magenta: var(--mark-magenta);
+  --color-mark-rose: var(--mark-rose);
+  --color-mark-slate: var(--mark-slate);
+
+  --font-sans: var(--font-space-grotesk), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-space-mono), ui-monospace, monospace;
+  --font-heading: var(--font-space-grotesk), ui-sans-serif, system-ui, sans-serif;
+
+  /* Comfortable reading sizes. The old UI ran on 11px labels; nobody should
+     squint at a price while a customer waits. */
+  --text-2xs: 0.75rem;
+  --text-2xs--line-height: 1.1rem;
+  --text-xs: 0.8125rem;
+  --text-xs--line-height: 1.15rem;
+  --text-sm: 0.875rem;
+  --text-sm--line-height: 1.3rem;
+  --text-base: 0.9375rem;
+  --text-base--line-height: 1.45rem;
+  --text-lg: 1.0625rem;
+  --text-lg--line-height: 1.6rem;
+  --text-xl: 1.25rem;
+  --text-xl--line-height: 1.75rem;
+  --text-2xl: 1.5rem;
+  --text-2xl--line-height: 1.9rem;
+  --text-3xl: 1.875rem;
+  --text-3xl--line-height: 2.2rem;
+  --text-4xl: 2.5rem;
+  --text-4xl--line-height: 2.7rem;
+
+  --radius-sm: calc(var(--radius) * 0.5);
+  --radius-md: calc(var(--radius) * 0.75);
   --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) * 1.4);
-  --radius-2xl: calc(var(--radius) * 1.8);
-  --radius-3xl: calc(var(--radius) * 2.2);
-  --radius-4xl: calc(var(--radius) * 2.6);
+  --radius-xl: calc(var(--radius) * 1.35);
+  --radius-2xl: calc(var(--radius) * 1.75);
+  --radius-3xl: calc(var(--radius) * 2.25);
+
+  --ease-swift: var(--ease-swift);
+  --ease-settle: var(--ease-settle);
 }
 
 :root {
-  /* Light mode for a clean premium vibe */
-  --background: oklch(0.98 0 0); /* Off white / very light gray */
-  --foreground: oklch(0.13 0.01 260); /* Very dark text */
+  /* Paper — warm neutral with the faintest violet cast, so white cards read
+     as objects sitting on a surface rather than holes in the page. */
+  --background: oklch(0.977 0.003 300);
+  --foreground: oklch(0.205 0.016 300);
 
-  --card: oklch(1 0 0); /* Pure white cards */
-  --card-foreground: oklch(0.13 0.01 260);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.205 0.016 300);
 
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.13 0.01 260);
+  --popover-foreground: oklch(0.205 0.016 300);
 
-  --primary: oklch(0.65 0.18 45); /* Orange/Amber primary */
-  --primary-foreground: oklch(0.98 0 0); /* White on orange */
+  /* Deep plum ink. Primary actions must never compete with category colour,
+     so the brand sits at the dark end rather than adding another hue. */
+  --primary: oklch(0.315 0.072 305);
+  --primary-foreground: oklch(0.985 0.002 300);
 
-  --secondary: oklch(0.95 0 0);
-  --secondary-foreground: oklch(0.13 0.01 260);
+  --secondary: oklch(0.955 0.006 300);
+  --secondary-foreground: oklch(0.265 0.022 300);
 
-  --muted: oklch(0.95 0 0);
-  --muted-foreground: oklch(0.4 0.01 260);
+  --muted: oklch(0.958 0.005 300);
+  --muted-foreground: oklch(0.492 0.017 300);
 
-  --accent: oklch(0.95 0 0);
-  --accent-foreground: oklch(0.13 0.01 260);
+  --accent: oklch(0.948 0.011 305);
+  --accent-foreground: oklch(0.295 0.045 305);
 
-  --destructive: oklch(0.55 0.2 25);
+  --destructive: oklch(0.575 0.205 25);
+  --destructive-foreground: oklch(0.99 0 0);
+  --success: oklch(0.545 0.135 152);
+  --success-foreground: oklch(0.99 0 0);
+  --warning: oklch(0.68 0.152 65);
+  --warning-foreground: oklch(0.22 0.04 65);
 
-  --border: oklch(0.9 0 0); /* Subtle borders */
-  --input: oklch(0.9 0 0);
-  --ring: oklch(0.65 0.18 45); /* Amber focus rings */
+  --border: oklch(0.913 0.006 300);
+  --input: oklch(0.913 0.006 300);
+  --ring: oklch(0.315 0.072 305);
 
-  --radius: 0.75rem; /* Larger radius for modern look */
+  --radius: 0.875rem;
 
-  --sidebar: oklch(0.98 0 0); /* Match background */
-  --sidebar-foreground: oklch(0.13 0.01 260);
-  --sidebar-primary: oklch(0.65 0.18 45);
-  --sidebar-primary-foreground: oklch(0.98 0 0);
-  --sidebar-accent: oklch(0.95 0 0);
-  --sidebar-accent-foreground: oklch(0.13 0.01 260);
-  --sidebar-border: oklch(0.9 0 0);
-  --sidebar-ring: oklch(0.65 0.18 45);
+  /* Category spectrum — evenly spaced hues, each tuned to stay legible as
+     text on paper and as a 3px spine at arm's length. */
+  --cat-coral: oklch(0.585 0.172 30);
+  --cat-gold: oklch(0.615 0.128 78);
+  --cat-steel: oklch(0.545 0.132 245);
+  --cat-magenta: oklch(0.565 0.198 325);
+  --cat-rose: oklch(0.595 0.175 8);
+  --cat-indigo: oklch(0.505 0.168 288);
+  --cat-teal: oklch(0.545 0.105 195);
+  --cat-leaf: oklch(0.535 0.128 152);
+  --cat-slate: oklch(0.555 0.018 300);
+
+  /* Chart-fill colours. Distinct from the chip colours above because a chip
+     carries text (so it must stay legible as ink) while a bar is a filled
+     shape. Same hue families, different job. These eight were produced by the
+     palette validator, not by eye: all-pairs normal-vision ΔE 16.5 and
+     colour-blind ΔE 8.8, both above floor. Do not hand-edit — re-run the
+     validator if they ever change. */
+  --mark-coral: oklch(0.450 0.187 28.9);
+  --mark-gold: oklch(0.688 0.130 82.7);
+  --mark-leaf: oklch(0.561 0.122 141.5);
+  --mark-teal: oklch(0.698 0.116 192.6);
+  --mark-steel: oklch(0.630 0.180 267.0);
+  --mark-indigo: oklch(0.450 0.165 285.4);
+  --mark-magenta: oklch(0.630 0.256 333.3);
+  --mark-rose: oklch(0.572 0.105 341.4);
+  --mark-slate: oklch(0.555 0.018 300);
+
+  --sidebar: oklch(0.994 0.002 300);
+  --sidebar-foreground: oklch(0.205 0.016 300);
+  --sidebar-primary: oklch(0.315 0.072 305);
+  --sidebar-primary-foreground: oklch(0.985 0.002 300);
+  --sidebar-accent: oklch(0.948 0.011 305);
+  --sidebar-accent-foreground: oklch(0.295 0.045 305);
+  --sidebar-border: oklch(0.918 0.006 300);
+  --sidebar-ring: oklch(0.315 0.072 305);
+
+  --shadow-card: 0 1px 2px -1px oklch(0.2 0.02 300 / 0.07), 0 2px 8px -3px oklch(0.2 0.02 300 / 0.06);
+  --shadow-raised: 0 2px 4px -2px oklch(0.2 0.02 300 / 0.08), 0 8px 20px -6px oklch(0.2 0.02 300 / 0.10);
+  --shadow-float: 0 8px 16px -8px oklch(0.2 0.02 300 / 0.16), 0 24px 48px -16px oklch(0.2 0.02 300 / 0.18);
+
+  --ease-swift: cubic-bezier(0.32, 0.72, 0, 1);
+  --ease-settle: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .dark {
-  /* Dark mode equivalent for Ardaykaab/Aduunyo sleek premium vibe */
-  --background: oklch(0.145 0 0); /* Sleek charcoal background ~ #0a0a0a */
-  --foreground: oklch(0.98 0 0);
+  /* Not an inversion. Deep plum-charcoal reads as a lit room at night; pure
+     black would make the category colours glare. */
+  --background: oklch(0.168 0.013 300);
+  --foreground: oklch(0.968 0.004 300);
 
-  --card: oklch(0.205 0 0); /* Lighter gray for cards ~ #18181b */
-  --card-foreground: oklch(0.98 0 0);
+  --card: oklch(0.218 0.015 300);
+  --card-foreground: oklch(0.968 0.004 300);
 
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.98 0 0);
+  --popover: oklch(0.232 0.016 300);
+  --popover-foreground: oklch(0.968 0.004 300);
 
-  --primary: oklch(0.65 0.18 45); /* Orange/Amber primary */
-  --primary-foreground: oklch(0.98 0 0); /* White on orange */
+  /* Plum lifts to the light end in the dark, keeping the same identity while
+     staying readable as a filled button. */
+  --primary: oklch(0.815 0.098 305);
+  --primary-foreground: oklch(0.195 0.042 305);
 
-  --secondary: oklch(0.268 0 0);
-  --secondary-foreground: oklch(0.98 0 0);
+  --secondary: oklch(0.268 0.016 300);
+  --secondary-foreground: oklch(0.955 0.004 300);
 
-  --muted: oklch(0.268 0 0);
-  --muted-foreground: oklch(0.65 0 0);
+  --muted: oklch(0.262 0.015 300);
+  --muted-foreground: oklch(0.702 0.014 300);
 
-  --accent: oklch(0.268 0 0);
-  --accent-foreground: oklch(0.98 0 0);
+  --accent: oklch(0.298 0.032 305);
+  --accent-foreground: oklch(0.925 0.032 305);
 
-  --destructive: oklch(0.55 0.2 25);
+  --destructive: oklch(0.655 0.195 25);
+  --destructive-foreground: oklch(0.16 0.02 25);
+  --success: oklch(0.715 0.152 152);
+  --success-foreground: oklch(0.16 0.03 152);
+  --warning: oklch(0.795 0.148 72);
+  --warning-foreground: oklch(0.19 0.04 72);
 
-  --border: oklch(0.3 0 0); /* Subtle borders */
-  --input: oklch(0.3 0 0);
-  --ring: oklch(0.65 0.18 45); /* Amber focus rings */
+  --border: oklch(0.305 0.016 300);
+  --input: oklch(0.315 0.016 300);
+  --ring: oklch(0.815 0.098 305);
 
-  --sidebar: oklch(0.145 0 0); /* Match background */
-  --sidebar-foreground: oklch(0.98 0 0);
-  --sidebar-primary: oklch(0.65 0.18 45);
-  --sidebar-primary-foreground: oklch(0.98 0 0);
-  --sidebar-accent: oklch(0.268 0 0);
-  --sidebar-accent-foreground: oklch(0.98 0 0);
-  --sidebar-border: oklch(0.3 0 0);
-  --sidebar-ring: oklch(0.65 0.18 45);
+  /* Same hues, raised in lightness and eased in chroma so they glow rather
+     than vibrate against the dark ground. */
+  --cat-coral: oklch(0.735 0.148 32);
+  --cat-gold: oklch(0.795 0.128 82);
+  --cat-steel: oklch(0.725 0.118 245);
+  --cat-magenta: oklch(0.735 0.155 325);
+  --cat-rose: oklch(0.745 0.145 10);
+  --cat-indigo: oklch(0.715 0.135 288);
+  --cat-teal: oklch(0.752 0.098 195);
+  --cat-leaf: oklch(0.752 0.122 152);
+  --cat-slate: oklch(0.702 0.016 300);
+
+  /* Validated against the dark card surface: normal-vision ΔE 15.3, colour-blind
+     ΔE 7.4. The 7.4 sits in the floor band, which is why every bar in this app
+     is directly labelled and every chart is backed by a table. */
+  --mark-coral: oklch(0.501 0.180 33.8);
+  --mark-gold: oklch(0.599 0.111 82.0);
+  --mark-leaf: oklch(0.490 0.105 156.3);
+  --mark-teal: oklch(0.660 0.105 192.8);
+  --mark-steel: oklch(0.544 0.128 242.9);
+  --mark-indigo: oklch(0.631 0.191 285.0);
+  --mark-magenta: oklch(0.527 0.149 336.9);
+  --mark-rose: oklch(0.660 0.213 5.8);
+  --mark-slate: oklch(0.702 0.016 300);
+
+  --sidebar: oklch(0.192 0.014 300);
+  --sidebar-foreground: oklch(0.968 0.004 300);
+  --sidebar-primary: oklch(0.815 0.098 305);
+  --sidebar-primary-foreground: oklch(0.195 0.042 305);
+  --sidebar-accent: oklch(0.298 0.032 305);
+  --sidebar-accent-foreground: oklch(0.925 0.032 305);
+  --sidebar-border: oklch(0.302 0.016 300);
+  --sidebar-ring: oklch(0.815 0.098 305);
+
+  --shadow-card: 0 1px 2px -1px oklch(0 0 0 / 0.4), 0 2px 8px -3px oklch(0 0 0 / 0.34);
+  --shadow-raised: 0 2px 4px -2px oklch(0 0 0 / 0.44), 0 8px 20px -6px oklch(0 0 0 / 0.4);
+  --shadow-float: 0 8px 16px -8px oklch(0 0 0 / 0.55), 0 24px 48px -16px oklch(0 0 0 / 0.5);
 }
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    @apply border-border outline-ring/40;
   }
+
   body {
     @apply bg-background text-foreground;
+    font-family: var(--font-sans);
+    font-size: var(--text-base);
+    /* Space Grotesk sets a touch wide by default; pulling it in slightly
+       makes running text feel settled rather than spaced out. */
+    letter-spacing: -0.011em;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
   }
-  html {
-    @apply font-sans;
+
+  h1, h2, h3, h4 {
+    font-family: var(--font-heading);
+    font-weight: 600;
+    letter-spacing: -0.022em;
+  }
+
+  /* Every number in the app lines up in its column and never jitters as it
+     changes. Non-negotiable in software whose main job is arithmetic. */
+  .tabular,
+  th, td,
+  input[type="number"] {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum" 1;
+  }
+
+  /* Touch targets on the counter. Fingers, not cursors. */
+  @media (pointer: coarse) {
+    button, [role="button"], a[href], select, summary {
+      min-height: 44px;
+    }
+  }
+
+  ::selection {
+    background: color-mix(in oklch, var(--primary) 22%, transparent);
+  }
+
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb {
+    background: color-mix(in oklch, var(--muted-foreground) 26%, transparent);
+    border-radius: 999px;
+    border: 3px solid transparent;
+    background-clip: content-box;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: color-mix(in oklch, var(--muted-foreground) 42%, transparent);
+    background-clip: content-box;
+  }
+}
+
+@layer utilities {
+  /* The signature: a category's colour as a spine on the leading edge of
+     whatever it belongs to. Used on product cards, cart lines and table rows. */
+  .cat-spine {
+    position: relative;
+    overflow: hidden;
+  }
+  .cat-spine::before {
+    content: "";
+    position: absolute;
+    inset-block: 0;
+    inset-inline-start: 0;
+    width: 3px;
+    background: var(--spine-color, var(--cat-slate));
+  }
+
+  /* The table variant. `.cat-spine` cannot be used on a <tr>: `overflow`
+     on a table row makes the header and body size their columns
+     independently, so the two fall out of alignment. An inset shadow on the
+     first cell paints the same 3px edge and costs no layout. */
+  .cat-spine-cell {
+    box-shadow: inset 3px 0 0 0 var(--spine-color, var(--cat-slate));
+  }
+
+  .shadow-card { box-shadow: var(--shadow-card); }
+  .shadow-raised { box-shadow: var(--shadow-raised); }
+  .shadow-float { box-shadow: var(--shadow-float); }
+
+  .stack-in {
+    animation: stack-in 0.42s var(--ease-settle) both;
+  }
+}
+
+@keyframes stack-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* Nothing above is worth making someone motion-sick for. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }

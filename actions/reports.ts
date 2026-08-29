@@ -1,35 +1,46 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
+import { requireAdmin } from "@/lib/session";
 
 export async function getReportData() {
-    // Top Products
+    await requireAdmin();
+
     const sales = await prisma.sale.findMany({
-        include: { product: true, user: true }
+        include: {
+            items: { include: { product: { select: { category: true } } } },
+            user: { select: { name: true } },
+        },
     });
 
-    const productSales: Record<string, { name: string, qty: number, total: number }> = {};
+    const productSales: Record<string, { name: string, category: string | null, qty: number, total: number }> = {};
     const categorySales: Record<string, { name: string, qty: number, total: number }> = {};
     const cashierSales: Record<string, { name: string, total: number }> = {};
     const dailyRevenue: Record<string, number> = {};
 
     sales.forEach(s => {
-        // Top Products
-        if (!productSales[s.productId]) {
-            productSales[s.productId] = { name: s.product.name, qty: 0, total: 0 };
-        }
-        productSales[s.productId].qty += s.quantity;
-        productSales[s.productId].total += s.totalAmount;
+        // What sold is a question about lines, not receipts: one sale can carry
+        // several products, and each contributes only its own line.
+        for (const item of s.items) {
+            // Keyed by product so a rename never splits one item into two rows,
+            // labelled with the name as it was recorded on the sale.
+            if (!productSales[item.productId]) {
+                productSales[item.productId] = { name: item.productName, category: item.product.category, qty: 0, total: 0 };
+            }
+            productSales[item.productId].qty += item.quantity;
+            productSales[item.productId].total += item.lineTotal;
 
-        // Top Categories
-        const catName = s.product.category || "Uncategorized";
-        if (!categorySales[catName]) {
-            categorySales[catName] = { name: catName, qty: 0, total: 0 };
+            // Top Categories
+            const catName = item.product.category || "Uncategorized";
+            if (!categorySales[catName]) {
+                categorySales[catName] = { name: catName, qty: 0, total: 0 };
+            }
+            categorySales[catName].qty += item.quantity;
+            categorySales[catName].total += item.lineTotal;
         }
-        categorySales[catName].qty += s.quantity;
-        categorySales[catName].total += s.totalAmount;
 
-        // Cashier Performance
+        // Takings stay per-sale: a discount belongs to the receipt, not to any
+        // one line, so these are the figures that reconcile with the drawer.
         const cashierName = s.user?.name || "System";
         if (!cashierSales[cashierName]) {
             cashierSales[cashierName] = { name: cashierName, total: 0 };

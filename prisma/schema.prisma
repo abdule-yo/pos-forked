@@ -63,28 +63,74 @@ model Verification {
 }
 
 // Business Models
+
+/// A person the shop sells to. Created at the counter in seconds — a name is
+/// enough — so that the shop can answer "what has she bought before?".
+model Customer {
+  id        String   @id @default(cuid())
+  name      String
+  phone     String?
+  note      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  sales     Sale[]
+
+  @@index([name])
+  @@index([phone])
+}
+
 model Product {
   id        String   @id @default(cuid())
   name      String
   category  String?
   price     Float
+  /// What the shop paid for it. Without this "profit" is just revenue.
+  costPrice Float    @default(0)
   stock     Int      @default(0)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  sales     Sale[]
+  saleItems SaleItem[]
+
+  @@index([category])
 }
 
 model Sale {
-  id             String   @id @default(cuid())
-  productId      String
-  quantity       Int
+  id             String    @id @default(cuid())
+  invoiceNo      Int       @unique @default(autoincrement())
+  subtotal       Float     @default(0)
+  discount       Float     @default(0)
   totalAmount    Float
-  paymentMethod  String   // "Zaad", "eDahab", "Cash"
+  paymentMethod  String    // "Cash", "Zaad", "eDahab", "Bank"
+  /// Kept alongside customerId as a snapshot of the name at the time of sale,
+  /// and to preserve sales recorded before customers were a record.
   customerName   String?
+  customerId     String?
+  customer       Customer? @relation(fields: [customerId], references: [id])
   userId         String?
-  user           User?    @relation(fields: [userId], references: [id])
-  createdAt      DateTime @default(now())
-  product        Product  @relation(fields: [productId], references: [id])
+  user           User?     @relation(fields: [userId], references: [id])
+  createdAt      DateTime  @default(now())
+  items          SaleItem[]
+
+  @@index([createdAt])
+  @@index([customerId])
+}
+
+/// One product on one sale. Price and cost are copied in at the time of sale,
+/// so changing a product's price later never rewrites past profit.
+model SaleItem {
+  id          String  @id @default(cuid())
+  saleId      String
+  sale        Sale    @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  productId   String
+  product     Product @relation(fields: [productId], references: [id])
+  productName String
+  quantity    Int
+  unitPrice   Float
+  unitCost    Float
+  lineTotal   Float
+
+  @@index([saleId])
+  @@index([productId])
 }
 
 model Expense {
@@ -93,4 +139,6 @@ model Expense {
   amount      Float
   category    String?
   createdAt   DateTime @default(now())
+
+  @@index([createdAt])
 }

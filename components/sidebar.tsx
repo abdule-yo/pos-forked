@@ -1,10 +1,22 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { LayoutGrid, Store, Box, Wallet, LogOut, Package2, X, Users, ReceiptText, ChevronsUpDown, UserCircle, PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import {
+    Home,
+    ShoppingBag,
+    ReceiptText,
+    Package,
+    Wallet,
+    ChartNoAxesColumn,
+    Users,
+    UserCog,
+    LogOut,
+    Gem,
+    X,
+    ChevronsUpDown,
+} from "lucide-react";
 import { authClient } from "@/lib/auth-client";
-import { useRouter } from "next/navigation";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -14,54 +26,95 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
 
-const navItems = [
-    { href: "/", label: "Dashboard", icon: LayoutGrid },
-    { href: "/pos", label: "Point of Sale", icon: Store },
-    { href: "/sales", label: "Sales History", icon: ReceiptText },
-    { href: "/inventory", label: "Inventory", icon: Box },
-    { href: "/expenses", label: "Expenses", icon: Wallet },
+/**
+ * Navigation is written the way the shop talks, not the way the database is
+ * built: "Sell", not "Point of Sale"; "Products", not "Inventory"; "Staff",
+ * not "Users".
+ *
+ * Overview leads, because it answers the owner's first question of the day.
+ * Cashiers never see it — what the shop earns, what it spends and who works
+ * here belong to the owner, and hiding them makes the app smaller to learn.
+ */
+const NAV = [
+    { href: "/", label: "Overview", icon: Home, adminOnly: true },
+    { href: "/pos", label: "Sell", icon: ShoppingBag, adminOnly: false },
+    { href: "/sales", label: "Sales", icon: ReceiptText, adminOnly: false },
+    { href: "/customers", label: "Customers", icon: Users, adminOnly: false },
+    { href: "/inventory", label: "Products", icon: Package, adminOnly: false },
+    { href: "/expenses", label: "Expenses", icon: Wallet, adminOnly: true },
+    { href: "/reports", label: "Reports", icon: ChartNoAxesColumn, adminOnly: true },
+    { href: "/users", label: "Staff", icon: UserCog, adminOnly: true },
 ];
 
-function NavLink({ href, label, icon: Icon, pathname, onClose, isCollapsed }: any) {
-    const isActive = pathname === href;
+function NavLink({
+    href,
+    label,
+    icon: Icon,
+    isActive,
+    onClose,
+    isCollapsed,
+}: {
+    href: string;
+    label: string;
+    icon: typeof Home;
+    isActive: boolean;
+    onClose?: () => void;
+    isCollapsed?: boolean;
+}) {
     const link = (
-        <Link 
+        <Link
             href={href}
             onClick={onClose}
-            className={`flex items-center gap-3 py-2 rounded-lg text-[13px] transition-all duration-200 ${
-                isCollapsed ? 'justify-center px-0 w-9 h-9 mx-auto' : 'px-3 w-full'
-            } ${
-                isActive 
-                    ? "bg-muted/80 text-foreground font-medium" 
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted/40 font-normal"
-            }`}
+            aria-current={isActive ? "page" : undefined}
+            className={cn(
+                "group relative flex items-center gap-3 rounded-xl text-sm font-medium transition-colors duration-150",
+                isCollapsed ? "size-11 justify-center" : "h-11 px-3",
+                isActive
+                    ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
+            )}
         >
-            <Icon className={`h-4 w-4 flex-shrink-0 ${isActive ? "text-primary" : "text-muted-foreground/70"}`} strokeWidth={isActive ? 2 : 1.5} />
-            {!isCollapsed && <span className="whitespace-nowrap">{label}</span>}
+            {/* The active page is marked by a bar in the brand colour, echoing
+                the category spines used throughout the app. */}
+            {isActive && !isCollapsed && (
+                <span
+                    aria-hidden
+                    className="absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-full bg-primary"
+                />
+            )}
+            <Icon className="size-[18px] shrink-0" strokeWidth={isActive ? 2.2 : 1.8} />
+            {!isCollapsed && <span>{label}</span>}
         </Link>
     );
 
-    if (isCollapsed) {
-        return (
-            <Tooltip>
-                <TooltipTrigger render={link} />
-                <TooltipContent side="right" className="font-medium text-xs">
-                    {label}
-                </TooltipContent>
-            </Tooltip>
-        );
-    }
+    if (!isCollapsed) return link;
 
-    return link;
+    return (
+        <Tooltip>
+            <TooltipTrigger render={link} />
+            <TooltipContent side="right">{label}</TooltipContent>
+        </Tooltip>
+    );
 }
 
-export function Sidebar({ onClose, isCollapsed, onToggleCollapse }: { onClose?: () => void; isCollapsed?: boolean; onToggleCollapse?: () => void; }) {
+export function Sidebar({
+    onClose,
+    isCollapsed,
+}: {
+    onClose?: () => void;
+    isCollapsed?: boolean;
+    onToggleCollapse?: () => void;
+}) {
     const pathname = usePathname();
     const router = useRouter();
     const { data: session } = authClient.useSession();
 
     if (pathname === "/login") return null;
+
+    const isAdmin = (session?.user as { role?: string } | undefined)?.role === "admin";
+    const items = NAV.filter((item) => !item.adminOnly || isAdmin);
 
     const handleLogout = async () => {
         await authClient.signOut();
@@ -69,114 +122,102 @@ export function Sidebar({ onClose, isCollapsed, onToggleCollapse }: { onClose?: 
         router.refresh();
     };
 
-    const isAdmin = (session?.user as any)?.role === "admin";
-
     return (
-        <aside className="w-full h-full border border-border/50 bg-background flex flex-col transition-all duration-300 md:rounded-2xl shadow-sm overflow-hidden">
-            <div className={`p-4 border-b border-border/10 flex items-center justify-between gap-3 h-16 ${isCollapsed ? 'flex-col justify-center gap-2 p-2' : ''}`}>
-                <div className={`flex items-center gap-3 ${isCollapsed ? 'justify-center w-full' : ''}`}>
-                    <div className="h-8 w-8 bg-primary/20 rounded-lg flex items-center justify-center border border-primary/30 flex-shrink-0">
-                        <Package2 className="h-4 w-4 text-primary" strokeWidth={1.5} />
-                    </div>
-                    {!isCollapsed && (
-                        <div className="overflow-hidden transition-all duration-300 whitespace-nowrap">
-                            <h1 className="text-sm font-bold text-foreground leading-tight tracking-tight">POS</h1>
-                            <p className="text-[11px] text-muted-foreground font-medium">Business Engine</p>
-                        </div>
-                    )}
-                </div>
-                
-                <div className="flex items-center">
-                    {!isCollapsed && onClose && (
-                        <button 
-                            onClick={onClose}
-                            className="md:hidden p-2 rounded-lg text-muted-foreground hover:bg-muted/50 hover:text-foreground flex-shrink-0"
-                        >
-                            <X className="h-5 w-5" />
-                        </button>
-                    )}
-                </div>
-            </div>
-            
-            <nav className={`flex-1 py-5 space-y-1 overflow-y-auto overflow-x-hidden ${isCollapsed ? 'px-2' : 'px-3'}`}>
+        <aside className="flex h-full w-full flex-col overflow-hidden border border-border bg-sidebar shadow-card md:rounded-2xl">
+            <div
+                className={cn(
+                    "flex h-16 items-center gap-3 border-b border-border/60 px-4",
+                    isCollapsed && "justify-center px-2"
+                )}
+            >
+                <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground">
+                    <Gem className="size-4.5" strokeWidth={1.8} />
+                </span>
                 {!isCollapsed && (
-                    <div className="text-[10px] font-semibold text-muted-foreground/70 mb-3 uppercase tracking-wider px-2 whitespace-nowrap">Main Menu</div>
+                    <div className="min-w-0 flex-1">
+                        <p className="truncate font-heading text-sm font-semibold tracking-tight">
+                            Boutique
+                        </p>
+                        <p className="truncate text-xs text-muted-foreground">Shop counter</p>
+                    </div>
                 )}
-                {isCollapsed && (
-                    <div className="h-[20px] mb-3 border-b border-border/10 w-8 mx-auto" />
+                {!isCollapsed && onClose && (
+                    <button
+                        onClick={onClose}
+                        aria-label="Close menu"
+                        className="-mr-1 flex size-9 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground md:hidden"
+                    >
+                        <X className="size-5" />
+                    </button>
                 )}
-                
-                {navItems.map((item) => (
-                    <NavLink key={item.href} {...item} pathname={pathname} onClose={onClose} isCollapsed={isCollapsed} />
-                ))}
+            </div>
 
-                {isAdmin && (
-                    <>
-                        {!isCollapsed ? (
-                            <div className="text-[10px] font-semibold text-muted-foreground/70 mb-3 mt-6 uppercase tracking-wider px-2 whitespace-nowrap">Management</div>
-                        ) : (
-                            <div className="h-[20px] mb-3 mt-6 border-b border-border/10 w-8 mx-auto" />
-                        )}
-                        <NavLink href="/reports" label="Reports" icon={LayoutGrid} pathname={pathname} onClose={onClose} isCollapsed={isCollapsed} />
-                        <NavLink href="/users" label="Users" icon={Users} pathname={pathname} onClose={onClose} isCollapsed={isCollapsed} />
-                    </>
-                )}
+            <nav className={cn("flex-1 space-y-1 overflow-y-auto py-4", isCollapsed ? "px-2" : "px-3")}>
+                {items.map((item) => (
+                    <NavLink
+                        key={item.href}
+                        href={item.href}
+                        label={item.label}
+                        icon={item.icon}
+                        isActive={pathname === item.href}
+                        onClose={onClose}
+                        isCollapsed={isCollapsed}
+                    />
+                ))}
             </nav>
 
-            <div className={`p-3 border-t border-border/10 mt-auto flex flex-col gap-2 ${isCollapsed ? 'items-center' : ''}`}>
-                {/* User Profile */}
-                {session?.user && (
+            {session?.user && (
+                <div className={cn("border-t border-border/60 p-3", isCollapsed && "px-2")}>
                     <DropdownMenu>
-                        {isCollapsed ? (
-                            <Tooltip>
-                                <TooltipTrigger render={
-                                    <DropdownMenuTrigger asChild>
-                                        <button className="flex items-center gap-2 p-2 hover:bg-muted/80 transition-all border border-transparent hover:border-border/50 text-left outline-none focus-visible:ring-2 focus-visible:ring-primary justify-center px-0 w-9 h-9 mx-auto rounded-full">
-                                            <div className="h-8 w-8 flex-shrink-0 bg-muted/80 text-foreground font-medium flex items-center justify-center rounded-full border border-border/50">
-                                                {session.user.name?.charAt(0).toUpperCase() || "U"}
-                                            </div>
-                                        </button>
-                                    </DropdownMenuTrigger>
-                                } />
-                                <TooltipContent side="right" className="font-medium text-xs">
-                                    {session.user.name}
-                                </TooltipContent>
-                            </Tooltip>
-                        ) : (
-                            <DropdownMenuTrigger asChild>
-                                <button className="flex w-full items-center gap-2 p-2 hover:bg-muted/80 rounded-lg transition-all border border-transparent hover:border-border/50 text-left outline-none focus-visible:ring-2 focus-visible:ring-primary">
-                                    <div className="h-8 w-8 flex-shrink-0 bg-muted/80 text-foreground font-medium flex items-center justify-center rounded-full border border-border/50">
-                                        {session.user.name?.charAt(0).toUpperCase() || "U"}
-                                    </div>
-                                    <div className="flex-1 text-left overflow-hidden">
-                                        <p className="text-sm font-medium leading-none text-foreground truncate">{session.user.name}</p>
-                                        <p className="text-[11px] text-muted-foreground truncate">{session.user.email}</p>
-                                    </div>
-                                    <ChevronsUpDown className="h-4 w-4 flex-shrink-0 text-muted-foreground ml-auto" />
-                                </button>
-                            </DropdownMenuTrigger>
-                        )}
-                        <DropdownMenuContent className={isCollapsed ? "w-56" : "w-[calc(100%-1rem)] min-w-56"} align={isCollapsed ? "end" : "center"} side={isCollapsed ? "right" : "top"} sideOffset={8}>
+                        <DropdownMenuTrigger asChild>
+                            <button
+                                className={cn(
+                                    "flex items-center gap-3 rounded-xl text-left outline-none transition-colors hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring",
+                                    isCollapsed ? "size-11 justify-center" : "w-full p-2"
+                                )}
+                            >
+                                <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-accent text-sm font-semibold text-accent-foreground">
+                                    {session.user.name?.charAt(0).toUpperCase() || "U"}
+                                </span>
+                                {!isCollapsed && (
+                                    <>
+                                        <span className="min-w-0 flex-1">
+                                            <span className="block truncate text-sm font-medium">
+                                                {session.user.name}
+                                            </span>
+                                            <span className="block truncate text-xs text-muted-foreground">
+                                                {isAdmin ? "Owner" : "Cashier"}
+                                            </span>
+                                        </span>
+                                        <ChevronsUpDown className="size-4 shrink-0 text-muted-foreground" />
+                                    </>
+                                )}
+                            </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent
+                            align={isCollapsed ? "end" : "center"}
+                            side={isCollapsed ? "right" : "top"}
+                            sideOffset={8}
+                            className="min-w-56"
+                        >
                             <DropdownMenuLabel className="font-normal">
-                                <div className="flex flex-col space-y-1">
-                                    <p className="text-sm font-medium leading-none text-foreground">{session.user.name}</p>
-                                    <p className="text-xs leading-none text-muted-foreground mt-1">{session.user.email}</p>
-                                </div>
+                                <p className="text-sm font-medium">{session.user.name}</p>
+                                <p className="mt-0.5 text-xs text-muted-foreground">
+                                    {session.user.email}
+                                </p>
                             </DropdownMenuLabel>
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem className="cursor-pointer gap-2" onClick={() => {}}>
-                                <UserCircle className="h-4 w-4" />
-                                <span>Account</span>
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem className="cursor-pointer text-destructive focus:text-destructive focus:bg-destructive/10 gap-2" onClick={handleLogout}>
-                                <LogOut className="h-4 w-4" />
-                                <span>Log out</span>
+                            <DropdownMenuItem
+                                onClick={handleLogout}
+                                className="cursor-pointer gap-2 text-destructive focus:bg-destructive/10 focus:text-destructive"
+                            >
+                                <LogOut className="size-4" />
+                                Sign out
                             </DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
-                )}
-            </div>
+                </div>
+            )}
         </aside>
     );
 }

@@ -26,7 +26,7 @@ interface DataTableToolbarProps {
 }
 
 export function DataTableToolbar({
-    searchPlaceholder = "Filter...",
+    searchPlaceholder = "Search…",
     searchQuery,
     onSearch,
     showFilter = true,
@@ -38,14 +38,14 @@ export function DataTableToolbar({
     children,
 }: DataTableToolbarProps) {
     return (
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 bg-card overflow-hidden">
+        <div className="flex flex-col gap-3 border-b border-border p-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex flex-1 items-center">
-                <div className="relative w-full sm:w-[250px]">
-                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" strokeWidth={1.5} />
+                <div className="relative w-full sm:w-[280px]">
+                    <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                     <Input
                         placeholder={searchPlaceholder}
                         value={searchQuery}
-                        className="pl-8 h-9 text-[13px] bg-background border-border/50 w-full"
+                        className="h-10 w-full rounded-xl pl-9"
                         onChange={(e) => onSearch?.(e.target.value)}
                     />
                 </div>
@@ -54,27 +54,27 @@ export function DataTableToolbar({
                 {showFilter && filterOptions.length > 0 && (
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <Button variant="outline" size="sm" className="h-9 px-3 border-border/50 text-[13px] hover:bg-muted/50 text-foreground font-medium">
-                                <Filter className="mr-2 h-3.5 w-3.5" strokeWidth={1.5} />
-                                {filterValue === "all" ? "Filter" : filterValue}
+                            <Button variant="outline" size="sm" className="h-10 rounded-xl">
+                                <Filter className="mr-2 size-4" />
+                                {filterValue === "all" ? "All categories" : filterValue}
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-[150px]">
-                            <DropdownMenuLabel>Filter by</DropdownMenuLabel>
+                            <DropdownMenuLabel>Show only</DropdownMenuLabel>
                             <DropdownMenuSeparator />
                             <DropdownMenuCheckboxItem
                                 checked={filterValue === "all"}
                                 onCheckedChange={() => onFilterChange?.("all")}
-                                className="text-[12px]"
+                                
                             >
-                                All
+                                Everything
                             </DropdownMenuCheckboxItem>
                             {filterOptions.map((option) => (
                                 <DropdownMenuCheckboxItem
                                     key={option}
                                     checked={filterValue === option}
                                     onCheckedChange={() => onFilterChange?.(option)}
-                                    className="text-[12px]"
+                                    
                                 >
                                     {option}
                                 </DropdownMenuCheckboxItem>
@@ -85,25 +85,25 @@ export function DataTableToolbar({
                 {showExport && (
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <Button variant="outline" size="sm" className="h-9 px-3 border-border/50 text-[13px] hover:bg-muted/50 text-foreground font-medium">
-                                <Download className="mr-2 h-3.5 w-3.5" strokeWidth={1.5} />
+                            <Button variant="outline" size="sm" className="h-10 rounded-xl">
+                                <Download className="mr-2 size-4" />
                                 Export
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-[150px]">
-                            <DropdownMenuLabel>Export As</DropdownMenuLabel>
+                            <DropdownMenuLabel>Download as</DropdownMenuLabel>
                             <DropdownMenuSeparator />
                             <DropdownMenuCheckboxItem 
-                                className="text-[12px] cursor-pointer"
+                                className="cursor-pointer"
                                 onClick={() => onExport?.('excel')}
                             >
-                                Excel (CSV)
+                                Spreadsheet (CSV)
                             </DropdownMenuCheckboxItem>
                             <DropdownMenuCheckboxItem 
-                                className="text-[12px] cursor-pointer"
+                                className="cursor-pointer"
                                 onClick={() => onExport?.('pdf')}
                             >
-                                PDF Document
+                                PDF
                             </DropdownMenuCheckboxItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
