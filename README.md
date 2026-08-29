@@ -41,17 +41,18 @@ bun install
 ```
 
 ### 3. Environment Variables
-Create a `.env` file in the root directory and add your connection string and auth keys:
-```env
-DATABASE_URL="postgresql://user:password@localhost:5432/pos_db?schema=public"
-BETTER_AUTH_SECRET="your-super-secret-key"
+Copy the template and fill it in. `env.example` documents every variable the
+app reads, required and optional:
+```bash
+cp env.example .env
+openssl rand -base64 32   # paste into BETTER_AUTH_SECRET
 ```
 
 ### 4. Database Setup & Seeding
-Push the Prisma schema to your database and seed it with initial data (including the default Admin account):
+Apply the migrations and seed initial data (including the default Admin account):
 ```bash
-npx prisma db push
-bun run prisma/seed.ts
+bun run db:migrate
+bun run db:seed
 ```
 
 *Default Admin Account:*
@@ -63,6 +64,45 @@ bun run prisma/seed.ts
 bun dev
 ```
 Open [http://localhost:3000](http://localhost:3000) in your browser to access the system.
+
+## Deployment
+
+The app is deployed on **Vercel**, with Postgres hosted separately on Railway.
+
+### Environment variables
+Set these in *Vercel → Project → Settings → Environment Variables*, for the
+Production environment (and Preview, if you use preview deployments):
+
+| Variable | Value |
+| --- | --- |
+| `DATABASE_URL` | Railway's **public** url (`DATABASE_PUBLIC_URL` in the Railway Variables tab) — Vercel connects from outside Railway's private network |
+| `BETTER_AUTH_SECRET` | 32+ random bytes: `openssl rand -base64 32`. Better Auth refuses to start without it |
+| `BETTER_AUTH_URL` | The deployed origin, no trailing slash, e.g. `https://your-domain.com` |
+
+Everything else in `env.example` is optional. Notably, no origin allowlist
+needs maintaining: Vercel serves the app from its own origin, which both Next
+and Better Auth trust automatically.
+
+### Migrations
+`bun run build` runs `prisma migrate deploy` before `next build`, so every
+deploy applies pending migrations before the code that depends on them goes
+live. To add one:
+
+```bash
+# edit prisma/schema.prisma, then:
+npx prisma migrate dev --name describe_the_change
+```
+
+Commit the generated folder under `prisma/migrations`. Never run
+`prisma db push` against production — it changes the schema without recording
+a migration, and the next deploy will not know what happened.
+
+### Seeding
+Seeding is deliberately **not** part of the build. The seed creates
+`admin@pos.com` / `password123`, which is fine for a local database and an open
+door on a public one. After the first deploy, sign in with it once and
+immediately change the password — or create your own owner account and delete
+the seeded one.
 
 ## Usage Guide
 - **Login:** Use the default admin account to log in.
