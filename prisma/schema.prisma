@@ -122,7 +122,10 @@ model SaleItem {
   saleId      String
   sale        Sale    @relation(fields: [saleId], references: [id], onDelete: Cascade)
   productId   String
-  product     Product @relation(fields: [productId], references: [id])
+  /// Deleting a product takes its sale lines with it. The shop asked for a
+  /// delete that always succeeds rather than one the counter has to argue with,
+  /// so removing an item it no longer stocks also removes it from past sales.
+  product     Product @relation(fields: [productId], references: [id], onDelete: Cascade)
   productName String
   quantity    Int
   unitPrice   Float

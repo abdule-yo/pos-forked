@@ -4,7 +4,7 @@ import { RecentSalesTable } from "../recent-sales-table";
 import { PageHeader } from "@/components/page-header";
 
 export default async function SalesPage() {
-    await requireUser();
+    const user = await requireUser();
     const sales = await getAllSales();
 
     return (
@@ -13,7 +13,8 @@ export default async function SalesPage() {
                 title="Sales"
                 description="Every sale recorded, newest first."
             />
-            <RecentSalesTable initialSales={sales} />
+            {/* Undoing a sale rewrites the takings, so it stays with the owner. */}
+            <RecentSalesTable initialSales={sales} showDelete={user.role === "admin"} />
         </div>
     );
 }

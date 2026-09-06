@@ -2,7 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
-import { requireUser } from "@/lib/session";
+import { requireUser, requireAdmin } from "@/lib/session";
 import { SALE_INCLUDE } from "@/lib/sale-include";
 
 const PAYMENT_METHODS = ["Cash", "Zaad", "eDahab", "Bank"];
@@ -126,4 +126,41 @@ export async function getAllSales() {
 export async function getSale(id: string) {
     await requireUser();
     return prisma.sale.findUnique({ where: { id }, include: SALE_INCLUDE });
+}
+
+/**
+ * Removes a sale from the books.
+ *
+ * A sale that never should have been recorded also never took the stock it
+ * deducted, so the quantities go back on the shelf. The whole thing runs in one
+ * transaction: either the stock returns and the sale goes, or neither happens.
+ */
+export async function deleteSale(id: string) {
+    await requireAdmin();
+
+    await prisma.$transaction(async (tx) => {
+        const sale = await tx.sale.findUnique({ where: { id }, include: { items: true } });
+        if (!sale) throw new Error("That sale no longer exists.");
+
+        for (const item of sale.items) {
+            // updateMany rather than update: a line whose product has since been
+            // deleted has nothing to give its stock back to, and that is not an
+            // error — it just returns nothing.
+            await tx.product.updateMany({
+                where: { id: item.productId },
+                data: { stock: { increment: item.quantity } },
+            });
+        }
+
+        // The lines go with it — SaleItem.saleId already cascades.
+        await tx.sale.delete({ where: { id } });
+    });
+
+    revalidatePath("/");
+    revalidatePath("/pos");
+    revalidatePath("/sales");
+    revalidatePath("/inventory");
+    revalidatePath("/customers");
+    revalidatePath("/reports");
+    return true;
 }

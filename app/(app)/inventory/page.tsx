@@ -4,7 +4,7 @@ import { InventoryTable } from "./inventory-table";
 import { PageHeader } from "@/components/page-header";
 
 export default async function InventoryPage() {
-    await requireUser();
+    const user = await requireUser();
     const products = await getProducts();
 
     return (
@@ -13,7 +13,7 @@ export default async function InventoryPage() {
                 title="Products"
                 description="Everything the shop sells, and how many are left."
             />
-            <InventoryTable initialProducts={products} />
+            <InventoryTable initialProducts={products} canDelete={user.role === "admin"} />
         </div>
     );
 }

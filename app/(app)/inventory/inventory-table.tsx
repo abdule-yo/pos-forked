@@ -22,7 +22,17 @@ import { CategoryChip, StockChip } from "@/components/ui/chip";
 import { categoryColor } from "@/lib/categories";
 import { formatMoney } from "@/lib/format";
 
-export function InventoryTable({ initialProducts }: { initialProducts: Product[] }) {
+/**
+ * `canDelete` mirrors the server: removing a product is an owner's action, so a
+ * cashier is not shown a button that would only bounce them to the Sell screen.
+ */
+export function InventoryTable({
+    initialProducts,
+    canDelete = false,
+}: {
+    initialProducts: Product[];
+    canDelete?: boolean;
+}) {
     const router = useRouter();
     const [dialogOpen, setDialogOpen] = useState(false);
     const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
@@ -51,11 +61,10 @@ export function InventoryTable({ initialProducts }: { initialProducts: Product[]
             toast.success(`Removed ${toDelete.name}`);
             setToDelete(null);
             refresh();
-        } catch {
-            // A product that has already been sold cannot be removed without
-            // destroying that sale's history.
-            toast.error("This item can't be removed", {
-                description: "It appears in past sales. Set its stock to 0 instead.",
+        } catch (error) {
+            toast.error("Couldn't remove this item", {
+                description:
+                    error instanceof Error ? error.message : "Please try again.",
             });
         } finally {
             setIsDeleting(false);
@@ -112,15 +121,17 @@ export function InventoryTable({ initialProducts }: { initialProducts: Product[]
                     >
                         <Pen className="size-4" />
                     </Button>
-                    <Button
-                        variant="ghost"
-                        size="icon"
-                        className="text-muted-foreground hover:text-destructive"
-                        onClick={() => setToDelete(p)}
-                        aria-label={`Remove ${p.name}`}
-                    >
-                        <Trash2 className="size-4" />
-                    </Button>
+                    {canDelete && (
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="text-muted-foreground hover:text-destructive"
+                            onClick={() => setToDelete(p)}
+                            aria-label={`Remove ${p.name}`}
+                        >
+                            <Trash2 className="size-4" />
+                        </Button>
+                    )}
                 </div>
             ),
         },
@@ -144,8 +155,8 @@ export function InventoryTable({ initialProducts }: { initialProducts: Product[]
                     <DialogHeader>
                         <DialogTitle>Remove {toDelete?.name}?</DialogTitle>
                         <DialogDescription>
-                            It disappears from the Sell screen and this list. Past sales keep their
-                            record.
+                            It disappears from the Sell screen and this list, and is taken
+                            off any past sale it appears on. This cannot be undone.
                         </DialogDescription>
                     </DialogHeader>
                     <DialogFooter>

@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Expense } from "@prisma/client";
 import { ExpenseDialog } from "./expense-dialog";
@@ -7,10 +8,41 @@ import { DataTable, ColumnDef } from "@/components/data-table";
 import { CategoryChip } from "@/components/ui/chip";
 import { categoryColor } from "@/lib/categories";
 import { formatMoney, formatRelativeDay, formatTime } from "@/lib/format";
-import { Wallet } from "lucide-react";
+import { Trash2, Wallet } from "lucide-react";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { deleteExpense } from "@/actions/expenses";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
 
 export function ExpensesTable({ initialExpenses }: { initialExpenses: Expense[] }) {
     const router = useRouter();
+    const [toDelete, setToDelete] = useState<Expense | null>(null);
+    const [isDeleting, setIsDeleting] = useState(false);
+
+    const handleDelete = async () => {
+        if (!toDelete) return;
+        setIsDeleting(true);
+        try {
+            await deleteExpense(toDelete.id);
+            toast.success(`Removed ${toDelete.description}`);
+            setToDelete(null);
+            router.refresh();
+        } catch (error) {
+            toast.error("Couldn't remove this expense", {
+                description:
+                    error instanceof Error ? error.message : "Please try again.",
+            });
+        } finally {
+            setIsDeleting(false);
+        }
+    };
 
     const columns: ColumnDef<Expense>[] = [
         {
@@ -55,6 +87,23 @@ export function ExpensesTable({ initialExpenses }: { initialExpenses: Expense[] 
             ),
             exportValue: (e) => e.amount.toFixed(2),
         },
+        {
+            header: "",
+            align: "right",
+            cell: (e) => (
+                <div className="flex items-center justify-end">
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="text-muted-foreground hover:text-destructive"
+                        onClick={() => setToDelete(e)}
+                        aria-label={`Remove ${e.description}`}
+                    >
+                        <Trash2 className="size-4" />
+                    </Button>
+                </div>
+            ),
+        },
     ];
 
     const categories = Array.from(
@@ -62,21 +111,48 @@ export function ExpensesTable({ initialExpenses }: { initialExpenses: Expense[] 
     ) as string[];
 
     return (
-        <DataTable
-            data={initialExpenses}
-            columns={columns}
-            rowAccent={(e) => categoryColor(e.category)}
-            searchKey="description"
-            searchPlaceholder="Search expenses…"
-            filterKey="category"
-            filterOptions={categories}
-            showExport
-            exportFilenamePrefix="Expenses"
-            emptyIcon={Wallet}
-            emptyMessage="No expenses yet"
-            emptyDescription="Record rent, electricity and transport so the shop's takings are honest."
-            emptyAction={<ExpenseDialog onSuccess={() => router.refresh()} />}
-            toolbarActions={<ExpenseDialog onSuccess={() => router.refresh()} />}
-        />
+        <>
+            <Dialog open={!!toDelete} onOpenChange={(open) => !open && setToDelete(null)}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Remove this expense?</DialogTitle>
+                        <DialogDescription>
+                            {toDelete?.description} will be taken off the books, and the
+                            shop&apos;s profit will go up by {formatMoney(toDelete?.amount ?? 0)}.
+                            This cannot be undone.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button
+                            variant="outline"
+                            onClick={() => setToDelete(null)}
+                            disabled={isDeleting}
+                        >
+                            Keep it
+                        </Button>
+                        <Button variant="destructive" onClick={handleDelete} disabled={isDeleting}>
+                            {isDeleting ? "Removing…" : "Remove"}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            <DataTable
+                data={initialExpenses}
+                columns={columns}
+                rowAccent={(e) => categoryColor(e.category)}
+                searchKey="description"
+                searchPlaceholder="Search expenses…"
+                filterKey="category"
+                filterOptions={categories}
+                showExport
+                exportFilenamePrefix="Expenses"
+                emptyIcon={Wallet}
+                emptyMessage="No expenses yet"
+                emptyDescription="Record rent, electricity and transport so the shop's takings are honest."
+                emptyAction={<ExpenseDialog onSuccess={() => router.refresh()} />}
+                toolbarActions={<ExpenseDialog onSuccess={() => router.refresh()} />}
+            />
+        </>
     );
 }

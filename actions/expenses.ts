@@ -30,3 +30,14 @@ export async function createExpense(data: { description: string; amount: number;
     revalidatePath("/");
     return expense;
 }
+
+export async function deleteExpense(id: string) {
+    await requireAdmin();
+
+    // Nothing references an expense, so it simply goes.
+    await prisma.expense.delete({ where: { id } });
+
+    revalidatePath("/expenses");
+    revalidatePath("/");
+    return true;
+}
